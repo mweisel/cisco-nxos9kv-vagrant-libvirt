@@ -1,0 +1,58 @@
+- name: create cisco nexus 9000v vagrant box
+  hosts: localhost
+  gather_facts: no
+
+  vars:
+    - disk_image_name: cisco-nxosv.qcow2
+    - domain_name: cisco-nxosv
+    - expect_script: cisco_nexus9x00v_base_conf.exp
+
+  tasks:
+    - name: "verify the {{ disk_image_name }} file is available"
+      stat:
+        path: "/var/lib/libvirt/images/{{ disk_image_name }}"
+      register: stat_result
+      failed_when: not stat_result.stat.exists
+
+    - name: verify the vagrant-libvirt network is active
+      command: virsh -c qemu:///system net-list --name
+      register: vnet_result
+      changed_when: no
+      failed_when: not vnet_result.stdout is search('vagrant-libvirt')
+
+    - name: define the domain
+      command: virsh -c qemu:///system define ./templates/cisco-nxosv.xml
+      register: define_result
+      failed_when: define_result.rc != 0
+
+    - name: start the domain
+      command: virsh -c qemu:///system start {{ domain_name }}
+      register: start_result
+      failed_when: start_result.rc != 0
+
+    - name: set the cisco nxos base configuration
+      script: "{{ expect_script }}"
+      args:
+        executable: expect
+
+    - name: stop (destroy) the domain
+      command: virsh -c qemu:///system destroy {{ domain_name }}
+      register: destroy_result
+      failed_when: destroy_result.rc != 0
+
+    - name: undefine the domain
+      command: virsh -c qemu:///system undefine {{ domain_name }}
+      register: undefine_result
+      failed_when: undefine_result.rc != 0
+
+    - name: "copy the {{ disk_image_name }} file to the files directory"
+      copy:
+        src: "/var/lib/libvirt/images/{{ disk_image_name }}"
+        dest: "files/{{ disk_image_name }}"
+        remote_src: yes
+
+    # https://github.com/vagrant-libvirt/vagrant-libvirt/blob/master/tools/create_box.sh
+    - name: create the vagrant box artifact
+      script: create_box.sh ./files/{{ disk_image_name }}
+      args:
+        executable: bash

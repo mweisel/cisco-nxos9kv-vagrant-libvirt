@@ -1,0 +1,93 @@
+set timeout 360
+set prompt "(>|#) $"
+set nxos "7.0.3.I7.7"
+log_file -noappend "~/nxosv-console.explog"
+
+spawn telnet 127.0.0.1 52099
+
+# skip power on auto provisioning (poap)
+expect "Abort Power On Auto Provisioning"
+send "skip\r"
+
+# wait for system to become ready 
+expect "System ready"
+send "\r"
+
+# log in with the admin user
+expect "login:"
+send "admin\r"
+expect "Password:"
+send "\r"
+
+# configure the boot image and reload
+expect -re $prompt
+send "configure\r"
+expect -re $prompt
+send "username admin password Cisco1984!\r"
+expect -re $prompt
+send "no feature signature-verification\r"
+expect "Are you sure you want to continue"
+send "y\r"
+expect -re $prompt
+send "boot nxos bootflash:nxos.$nxos.bin\r"
+expect -re $prompt
+send "end\r"
+expect -re $prompt
+
+# save the running configuration to local nvram
+send "copy running-config startup-config\r"
+expect -re $prompt
+
+# pause and reload
+sleep 30
+send "reload\r"
+expect "This command will reboot the system"
+send "y\r"
+
+# wait for system to become ready 
+expect "System ready"
+send "\r"
+
+# log in with the admin user
+expect "login:"
+send "admin\r"
+expect "Password:"
+send "Cisco1984!\r"
+
+# create the vagrant user
+expect -re $prompt
+send "configure\r"
+expect -re $prompt
+send "feature bash-shell\r"
+expect -re $prompt
+send "username vagrant password vagrant role network-admin\r"
+expect -re $prompt
+send "username vagrant sshkey ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEA6NF8iallvQVp22WDkTkyrtvp9eWW6A8YVr+kz4TjGYe7gHzIw+niNltGEFHzD8+v1I2YJ6oXevct1YeS0o9HZyN1Q9qgCgzUFtdOKLv6IedplqoPkcmF0aYet2PkEDo3MlTBckFXPITAMzF8dJSIFo9D8HfdOV0IAdx4O7PtixWKn5y2hMNG0zQPyUecp4pzC6kivAIhyfHilFR61RGL+GPXQ2MWZWFYbAGjyiYJnAmCP3NOTd0jMZEnDkbUvxhMmBYSdETk1rRgm+R4LOzFUGaHqHDLKLX+FIPKcF96hrucXzcWyLbIbEgE98OHlnVYCzRdK8jlqm8tehUc9c9WhQ==\r"
+
+# disable timeout for the virtual terminal line 
+expect -re $prompt
+send "line vty\r"
+expect -re $prompt
+send "exec-timeout 0\r"
+expect -re $prompt
+send "exit\r"
+
+# configure the management interface
+expect -re $prompt
+send "interface mgmt0\r"
+expect -re $prompt
+send "ip address dhcp\r"
+expect -re $prompt
+send "no shut\r"
+expect -re $prompt
+send "end\r"
+expect -re $prompt
+
+# save the running configuration to local nvram
+send "copy running-config startup-config\r"
+expect -re $prompt
+
+# allow time for save to complete
+sleep 30
+send "\r"
+expect -re $prompt

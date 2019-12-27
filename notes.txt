@@ -1,0 +1,63 @@
+# virt-install
+
+<pre>
+virt-install \
+    --connect qemu:///system \
+    --virt-type kvm \
+    --name cisco-nxosv \
+    --boot loader=/usr/share/ovmf/x64/OVMF_CODE.fd,loader.readonly=yes,nvram.template=/usr/share/ovmf/x64/OVMF_VARS.fd,loader_secure=no \
+    --cpu host \
+    --vcpus 2 \
+    --memory 8192 \
+    --serial tcp,host=:52099,mode=bind,protocol=telnet \
+    --network network=vagrant-libvirt,model=e1000 \
+    --os-variant none \
+    --memballoon none \
+    --disk path=/var/lib/libvirt/images/cisco-nxosv.qcow2,format=qcow2,device=disk,bus=sata \
+    --graphics none \
+    --import
+</pre>
+
+--- alt
+
+<pre>
+virt-install \
+    --connect qemu:///system \
+    --virt-type kvm \
+    --name cisco-nxosv \
+    --boot uefi \
+    --cpu host \
+    --vcpus 2 \
+    --memory 8192 \
+    --serial tcp,host=:52099,mode=bind,protocol=telnet \
+    --network network=vagrant-libvirt,model=e1000 \
+    --os-variant none \
+    --disk path=/var/lib/libvirt/images/cisco-nxosv.qcow2,format=qcow2,device=disk,bus=sata \
+    --graphics none \
+    --import
+</pre>
+
+---
+
+<pre>
+Abort Power On Auto Provisioning [yes - continue with normal setup, skip - bypass password and basic configuration, no - continue with Power On Auto Provisioning] (yes/skip/no)[no]: skip
+</pre>
+
+<pre>
+User Access Verification
+ login:
+ Password:
+</pre>
+
+---
+
+<pre>
+ping www.news.com source-interface mgmt0
+</pre>
+
+---
+
+<pre>
+dpkg -L ovmf | grep -E 'OVMF_(CODE|VARS)\.fd'
+pacman -Ql ovmf | grep 'fd$'
+</pre>
