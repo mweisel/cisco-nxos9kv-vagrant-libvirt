@@ -12,7 +12,7 @@ if [ -f ./${NAME}.box ]; then
     printf "${NAME}.box deleted.\n"
 fi
 # copy a "fresh" disk image to the libvirt/images dir
-sudo cp ${HOME}/Downloads/${NAME}.qcow2 /var/lib/libvirt/images/${NAME}.qcow2
+sudo cp -f ${HOME}/Downloads/${NAME}.qcow2 /var/lib/libvirt/images/${NAME}.qcow2
 if [ $? -eq 0 ]; then
     printf "${NAME}.qcow2 copied successfully to /var/lib/libvirt/images.\n"
 fi

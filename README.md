@@ -102,7 +102,6 @@ domain.loader = "/usr/share/OVMF/OVMF_CODE.fd"
 | :--- | :--- | :--- |
 | nxosv-final.7.0.3.I7.7.qcow2 | 7.0.3.I7.7 | cisco_nxos_base_conf.exp |
 | nxosv.9.2.4.qcow2 | 9.2.4 | cisco_nxos_base_conf.exp |
-| nxosv.9.3.2.qcow2 | 9.3.2 | cisco_nxos_base_conf.exp |
 | nexus9300v.9.3.3.qcow2 | 9.3.3 | cisco_nexus9x00v_base_conf.exp |
 | nexus9500v.9.3.3.qcow2 | 9.3.3 | cisco_nexus9x00v_base_conf.exp |
 
