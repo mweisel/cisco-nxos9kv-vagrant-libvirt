@@ -1,6 +1,6 @@
 set timeout 360
 set prompt "(>|#) $"
-set nxos "7.0.3.I7.7"
+set nxos "7.0.3.I7.8"
 log_file -noappend "~/nxosv-console.explog"
 
 spawn telnet 127.0.0.1 52099

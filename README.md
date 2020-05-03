@@ -25,7 +25,7 @@ vagrant plugin list
 
 > Arch Linux
 ```
-sudo pacman -S ovmf
+sudo pacman -S edk2-ovmf
 ```
 
 > Ubuntu 18.04
@@ -62,11 +62,11 @@ sudo chown libvirt-qemu:kvm /var/lib/libvirt/images/cisco-nxosv.qcow2
 sudo chmod u+x /var/lib/libvirt/images/cisco-nxosv.qcow2
 ```
 
-6. Get the the path to your OVMF firmware image and runtime variables template. 
+6. Get the the path to your OVMF (x64) firmware image and runtime variables template.
 
 > Arch Linux
 ```
-pacman -Ql ovmf | grep 'fd$'
+pacman -Ql edk2-ovmf | grep -E 'edk2-ovmf/x64/OVMF_(CODE|VARS)\.fd'
 ```
 
 > Ubuntu 18.04
@@ -79,11 +79,11 @@ dpkg -L ovmf | grep -E 'OVMF_(CODE|VARS)\.fd'
 > Arch Linux
 ```
 # cisco-nxosv.xml file
-<loader readonly='yes' secure='no' type='rom'>/usr/share/ovmf/x64/OVMF_CODE.fd</loader>
-<nvram template='/usr/share/ovmf/x64/OVMF_VARS.fd'/>
+<loader readonly='yes' secure='no' type='rom'>/usr/share/edk2-ovmf/x64/OVMF_CODE.fd</loader>
+<nvram template='/usr/share/edk2-ovmf/x64/OVMF_VARS.fd'/>
 
 # create_box.sh file 
-domain.loader = "/usr/share/ovmf/x64/OVMF_CODE.fd"
+domain.loader = "/usr/share/edk2-ovmf/x64/OVMF_CODE.fd"
 ```
 
 > Ubuntu 18.04
@@ -96,23 +96,23 @@ domain.loader = "/usr/share/ovmf/x64/OVMF_CODE.fd"
 domain.loader = "/usr/share/OVMF/OVMF_CODE.fd"
 ```
 
-8. Modify the `expect_script` and `nxos` variable values depending on the version.
+8. Modify the `expect_script` and `nxos` variable values.
 
 | Disk image | Boot image | Expect script |
 | :--- | :--- | :--- |
-| nxosv-final.7.0.3.I7.7.qcow2 | 7.0.3.I7.7 | cisco_nxos_base_conf.exp |
+| nxosv-final.7.0.3.I7.8.qcow2 | 7.0.3.I7.8 | cisco_nxos_base_conf.exp |
 | nxosv.9.2.4.qcow2 | 9.2.4 | cisco_nxos_base_conf.exp |
 | nexus9300v.9.3.3.qcow2 | 9.3.3 | cisco_nexus9x00v_base_conf.exp |
 | nexus9500v.9.3.3.qcow2 | 9.3.3 | cisco_nexus9x00v_base_conf.exp |
 
-For example, if using the `nxosv-final.7.0.3.I7.7.qcow2` disk image:
+For example, if using the `nxosv-final.7.0.3.I7.8.qcow2` disk image:
 
 ```
 # main.yml file
 expect_script: cisco_nxos_base_conf.exp
 
 # cisco_nxos_base_conf.exp file
-set nxos "7.0.3.I7.7"
+set nxos "7.0.3.I7.8"
 ```
 
 If using the `nexus9300v.9.3.3.qcow2` disk image:
@@ -138,7 +138,7 @@ virsh -c qemu:///system net-start vagrant-libvirt
 ansible-playbook main.yml
 ```
 
-11. Add the Vagrant box. 
+11. Add the Vagrant box to the local inventory.
 
 ```
 vagrant box add --provider libvirt --name cisco-nexus9500v-9.3.3 ./cisco-nxosv.box
@@ -146,7 +146,7 @@ vagrant box add --provider libvirt --name cisco-nexus9500v-9.3.3 ./cisco-nxosv.b
 
 ## Debug
 
-To view the telnet session output for the `expect` task:
+View the telnet session output for the `expect` task:
 
 ```
 tail -f ~/nxosv-console.explog
