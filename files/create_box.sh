@@ -119,7 +119,7 @@ Vagrant.configure("2") do |config|
   config.vm.provider :libvirt do |domain|
     domain.cpus = 2
     domain.features = ['acpi']
-    domain.loader = "/usr/share/edk2-ovmf/x64/OVMF_CODE.fd"
+    domain.loader = "/usr/share/OVMF/OVMF_CODE.fd"
     domain.memory = 8192
     domain.disk_bus = "sata"
     domain.disk_device = "sda"

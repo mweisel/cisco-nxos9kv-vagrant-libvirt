@@ -1,6 +1,6 @@
 set timeout 360
 set prompt "(>|#) $"
-set nxos "7.0.3.I7.9"
+set nxos "10.1.1"
 log_file -noappend "~/nxosv-console.explog"
 
 spawn telnet 127.0.0.1 52099
@@ -8,10 +8,6 @@ spawn telnet 127.0.0.1 52099
 # skip power on auto provisioning (poap)
 expect "Abort Power On Auto Provisioning"
 send "skip\r"
-
-# wait for system to become ready 
-expect "System ready"
-send "\r"
 
 # log in with the admin user
 expect "login:"
@@ -28,7 +24,7 @@ send "no feature signature-verification\r"
 expect "Are you sure you want to continue"
 send "y\r"
 expect -re $prompt {
-	send "boot nxos bootflash:nxos.$nxos.bin\r"
+	send "boot nxos bootflash:nxos64.$nxos.bin\r"
 	send "end\r"
 }
 

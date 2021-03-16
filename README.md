@@ -1,8 +1,8 @@
-# Cisco Nexus 9000v Vagrant box (libvirt)
+<img alt="Vagrant" src="https://img.shields.io/badge/vagrant%20-%231563FF.svg?&style=for-the-badge&logo=vagrant&logoColor=white"/>
+
+# Cisco Nexus 9000v Vagrant box
 
 A procedure for creating a Cisco Nexus 9000v Vagrant box for the [libvirt](https://libvirt.org) provider.
-
-<a href="https://asciinema.org/a/306347?speed=8"><img src="https://asciinema.org/a/306347.svg" width="720"/></a>
 
 ## Prerequisites
 
@@ -22,20 +22,11 @@ A procedure for creating a Cisco Nexus 9000v Vagrant box for the [libvirt](https
 
 <pre>
 $ <b>which git python ansible libvirtd virsh qemu-system-x86_64 expect telnet vagrant</b>
-</pre>
-
-<pre>
 $ <b>vagrant plugin list</b>
-vagrant-libvirt (0.1.2, global)
+vagrant-libvirt (0.3.0, global)
 </pre>
 
 1\. Install the `ovmf` package.
-
-> Arch Linux
-
-<pre>
-$ <b>sudo pacman -S edk2-ovmf</b>
-</pre>
 
 > Ubuntu 18.04
 
@@ -43,29 +34,21 @@ $ <b>sudo pacman -S edk2-ovmf</b>
 $ <b>sudo apt install ovmf</b>
 </pre>
 
-2\. Clone this GitHub repo and _cd_ into the directory.
-
-<pre>
-$ <b>git clone https://github.com/mweisel/cisco-nxos9kv-vagrant-libvirt</b>
-$ <b>cd cisco-nxos9kv-vagrant-libvirt</b>
-</pre>
-
-3\. Log in and download the Cisco Nexus 9000/3000 Virtual Switch for KVM disk image file from your [Cisco](https://www.cisco.com/c/en/us/support/switches/nexus-9000v-switch/model.html#~tab-downloads) account.
-
-4\. Copy (and rename) the disk image file to the `/var/lib/libvirt/images` directory.
-
-<pre>
-$ <b>sudo cp $HOME/Downloads/nexus9500v.9.3.3.qcow2 /var/lib/libvirt/images/cisco-nxosv.qcow2</b>
-</pre>
-
-5\. Modify the file ownership and permissions. Note the owner may differ between Linux distributions.
-
 > Arch Linux
 
 <pre>
-$ <b>sudo chown nobody:kvm /var/lib/libvirt/images/cisco-nxosv.qcow2</b>
-$ <b>sudo chmod u+x /var/lib/libvirt/images/cisco-nxosv.qcow2</b>
+$ <b>sudo pacman -S edk2-ovmf</b>
 </pre>
+
+2\. Log in and download the Cisco Nexus 9000/3000 Virtual Switch for KVM disk image file from your [Cisco](https://www.cisco.com/c/en/us/support/switches/nexus-9000v-switch/model.html#~tab-downloads) account. Save the file to your `Downloads` directory.
+
+3\. Copy (and rename) the disk image file to the `/var/lib/libvirt/images` directory.
+
+<pre>
+$ <b>sudo cp $HOME/Downloads/nexus9300v.10.1.1.qcow2 /var/lib/libvirt/images/cisco-nxosv.qcow2</b>
+</pre>
+
+4\. Modify the file ownership and permissions. Note the owner may differ between Linux distributions.
 
 > Ubuntu 18.04
 
@@ -74,13 +57,34 @@ $ <b>sudo chown libvirt-qemu:kvm /var/lib/libvirt/images/cisco-nxosv.qcow2</b>
 $ <b>sudo chmod u+x /var/lib/libvirt/images/cisco-nxosv.qcow2</b>
 </pre>
 
-6\. Get the path to your OVMF (x64) firmware image and runtime variables template.
-
 > Arch Linux
 
 <pre>
-$ <b>pacman -Ql edk2-ovmf | grep -E 'x64/OVMF_(CODE|VARS)\.fd'</b>
+$ <b>sudo chown nobody:kvm /var/lib/libvirt/images/cisco-nxosv.qcow2</b>
+$ <b>sudo chmod u+x /var/lib/libvirt/images/cisco-nxosv.qcow2</b>
 </pre>
+
+5\. Create the `boxes` directory.
+
+<pre>
+$ <b>mkdir -p $HOME/boxes</b>
+</pre>
+
+6\. Start the `vagrant-libvirt` network (if not already started).
+
+<pre>
+$ <b>virsh -c qemu:///system net-list</b>
+$ <b>virsh -c qemu:///system net-start vagrant-libvirt</b>
+</pre>
+
+7\. Clone this GitHub repo and _cd_ into the directory.
+
+<pre>
+$ <b>git clone https://github.com/mweisel/cisco-nxos9kv-vagrant-libvirt</b>
+$ <b>cd cisco-nxos9kv-vagrant-libvirt</b>
+</pre>
+
+8\. Get the path to your OVMF (x64) firmware image and runtime variables template.
 
 > Ubuntu 18.04
 
@@ -88,50 +92,13 @@ $ <b>pacman -Ql edk2-ovmf | grep -E 'x64/OVMF_(CODE|VARS)\.fd'</b>
 $ <b>dpkg -L ovmf | grep -E 'OVMF_(CODE|VARS)\.fd'</b>
 </pre>
 
-7\. Modify the OVMF paths.
-
 > Arch Linux
 
 <pre>
-$ <b>vim templates/cisco-nxosv.xml</b>
+$ <b>pacman -Ql edk2-ovmf | grep -E 'x64/OVMF_(CODE|VARS)\.fd'</b>
 </pre>
 
-<pre>
-&lt;domain type='kvm'&gt;
-  &lt;name&gt;cisco-nxosv&lt;/name&gt;
-  &lt;memory unit='KiB'&gt;8388608&lt;/memory&gt;
-  &lt;vcpu placement='static'&gt;2&lt;/vcpu&gt;
-  &lt;os&gt;
-    &lt;type arch='x86_64'&gt;hvm&lt;/type&gt;
-    &lt;loader readonly='yes' secure='no' type='rom'&gt;<b>/usr/share/edk2-ovmf/x64/OVMF_CODE.fd</b>&lt;/loader&gt;
-    &lt;nvram template='<b>/usr/share/edk2-ovmf/x64/OVMF_VARS.fd</b>'/&gt;
-    &lt;boot dev='hd'/&gt;
-  &lt;/os&gt;
-...
-</pre>
-
-<pre>
-$ <b>vim files/create_box.sh</b>
-</pre>
-
-<pre>
-...
-
-  config.vm.provider :libvirt do |domain|
-    domain.cpus = 2
-    domain.features = ['acpi']
-    domain.loader = "<b>/usr/share/edk2-ovmf/x64/OVMF_CODE.fd</b>"
-    domain.memory = 8192
-    domain.disk_bus = "sata"
-    domain.disk_device = "sda"
-    domain.volume_cache = "unsafe"
-    domain.nic_model_type = "e1000"
-    domain.graphics_type = "none"
-  end
-...
-</pre>
-
-<br />
+9\. Modify the OVMF paths.
 
 > Ubuntu 18.04
 
@@ -174,20 +141,64 @@ $ <b>vim files/create_box.sh</b>
 ...
 </pre>
 
-8\. Modify the `expect_script` and `nxos` variable values.
+<br />
 
-Use the following as a guideline:
+> Arch Linux
+
+<pre>
+$ <b>vim templates/cisco-nxosv.xml</b>
+</pre>
+
+<pre>
+&lt;domain type='kvm'&gt;
+  &lt;name&gt;cisco-nxosv&lt;/name&gt;
+  &lt;memory unit='KiB'&gt;8388608&lt;/memory&gt;
+  &lt;vcpu placement='static'&gt;2&lt;/vcpu&gt;
+  &lt;os&gt;
+    &lt;type arch='x86_64'&gt;hvm&lt;/type&gt;
+    &lt;loader readonly='yes' secure='no' type='rom'&gt;<b>/usr/share/edk2-ovmf/x64/OVMF_CODE.fd</b>&lt;/loader&gt;
+    &lt;nvram template='<b>/usr/share/edk2-ovmf/x64/OVMF_VARS.fd</b>'/&gt;
+    &lt;boot dev='hd'/&gt;
+  &lt;/os&gt;
+...
+</pre>
+
+<pre>
+$ <b>vim files/create_box.sh</b>
+</pre>
+
+<pre>
+...
+
+  config.vm.provider :libvirt do |domain|
+    domain.cpus = 2
+    domain.features = ['acpi']
+    domain.loader = "<b>/usr/share/edk2-ovmf/x64/OVMF_CODE.fd</b>"
+    domain.memory = 8192
+    domain.disk_bus = "sata"
+    domain.disk_device = "sda"
+    domain.volume_cache = "unsafe"
+    domain.nic_model_type = "e1000"
+    domain.graphics_type = "none"
+  end
+...
+</pre>
+
+10\. Modify the `expect_script` and `nxos` variable values.
+
+Use the following as a guideline for different versions:
 
 | Disk image | Boot image | Expect script |
 | :--- | :--- | :--- |
-| nxosv-final.7.0.3.I7.8.qcow2 | 7.0.3.I7.8 | cisco_nxos_base_conf.exp |
+| nxosv-final.7.0.3.I7.9.qcow2 | 7.0.3.I7.9 | cisco_nxos_base_conf.exp |
 | nxosv.9.2.4.qcow2 | 9.2.4 | cisco_nxos_base_conf.exp |
-| nexus9500v.9.3.3.qcow2 | 9.3.3 | cisco_nexus9x00v_base_conf.exp |
-| nexus9300v.9.3.5.qcow2 | 9.3.5 | cisco_nexus9x00v_base_conf.exp |
+| nexus9500v.9.3.7.qcow2 | 9.3.7 | cisco_nexus9x00v_base_conf.exp |
+| nexus9300v.10.1.1.qcow2 | 10.1.1 | cisco_nexus9x00v_base_conf.exp |
+| nexus9500v64.10.1.1.qcow2 | 10.1.1 | cisco_nxos64_9500v_base_conf.exp |
 
 <br />
 
-> nxosv-final.7.0.3.I7.8.qcow2
+> nxosv-final.7.0.3.I7.9.qcow2
 
 <pre>
 $ <b>vim main.yml</b>
@@ -211,7 +222,7 @@ $ <b>vim files/cisco_nxos_base_conf.exp</b>
 <pre>
 set timeout 360
 set prompt "(>|#) $"
-set nxos "<b>7.0.3.I7.8</b>"
+set nxos "<b>7.0.3.I7.9</b>"
 log_file -noappend "~/nxosv-console.explog"
 
 ...
@@ -219,7 +230,7 @@ log_file -noappend "~/nxosv-console.explog"
 
 <br />
 
-> nexus9300v.9.3.5.qcow2
+> nexus9300v.10.1.1.qcow2
 
 <pre>
 $ <b>vim main.yml</b>
@@ -243,29 +254,75 @@ $ <b>vim files/cisco_nexus9x00v_base_conf.exp</b>
 <pre>
 set timeout 360
 set prompt "(>|#) $"
-set nxos "<b>9.3.5</b>"
+set nxos "<b>10.1.1</b>"
 log_file -noappend "~/nxosv-console.explog"
 
 ...
 </pre>
 
-9\. Start the `vagrant-libvirt` network (if not already started).
-
-<pre>
-$ <b>virsh -c qemu:///system net-list</b>
-$ <b>virsh -c qemu:///system net-start vagrant-libvirt</b>
-</pre>
-
-10\. Run the Ansible playbook.
+11\. Run the Ansible playbook.
 
 <pre>
 $ <b>ansible-playbook main.yml</b>
 </pre>
 
-11\. Add the Vagrant box to the local inventory.
+12\. Copy (and rename) the Vagrant box artifact to the `boxes` directory.
 
 <pre>
-$ <b>vagrant box add --provider libvirt --name cisco-nexus9500v-9.3.3 ./cisco-nxosv.box</b>
+$ <b>cp cisco-nxosv.box $HOME/boxes/cisco-nexus9300v-10.1.1.box</b>
+</pre>
+
+13\. Copy the box metadata file to the `boxes` directory.
+
+<pre>
+$ <b>cp ./files/cisco-nexus9300v.json $HOME/boxes/</b>
+</pre>
+
+14\. Change the current working directory to `boxes`.
+
+<pre>
+$ <b>cd $HOME/boxes</b>
+</pre>
+
+15\. Substitute the `HOME` placeholder string in the box metadata file.
+
+<pre>
+$ <b>awk '/url/{gsub(/^ */,"");print}' cisco-nexus9300v.json</b>
+"url": "file://<b>HOME</b>/boxes/cisco-nexus9300v-VER.box"
+
+$ <b>sed -i "s|HOME|${HOME}|" cisco-nexus9300v.json</b>
+
+$ <b>awk '/url/{gsub(/^ */,"");print}' cisco-nexus9300v.json</b>
+"url": "file://<b>/home/marc</b>/boxes/cisco-nexus9300v-VER.box"
+</pre>
+
+16\. Also, substitute the `VER` placeholder string with the Cisco NX-OS version you're using.
+
+<pre>
+$ <b>awk '/VER/{gsub(/^ */,"");print}' cisco-nexus9300v.json</b>
+"version": "<b>VER</b>",
+"url": "file:///home/marc/boxes/cisco-nexus9300v-<b>VER</b>.box"
+
+$ <b>sed -i 's/VER/10.1.1/g' cisco-nexus9300v.json</b>
+
+$ <b>awk '/\&lt;version\&gt;|url/{gsub(/^ */,"");print}' cisco-nexus9300v.json</b>
+"version": "<b>10.1.1</b>",
+"url": "file:///home/marc/boxes/cisco-nexus9300v-<b>10.1.1</b>.box"
+</pre>
+
+17\. Add the Vagrant box to the local inventory.
+
+<pre>
+$ <b>vagrant box add cisco-nexus9300v.json</b>
+</pre>
+
+18\. Verify the Vagrant box has been added to the local inventory.
+
+<pre>
+$ <b>vagrant box list | grep nexus</b>
+cisco-nexus9000v            (libvirt, 7.0.3.I7.9)
+cisco-nexus9300v            (libvirt, 10.1.1)
+cisco-nexus9500v            (libvirt, 10.1.1)
 </pre>
 
 ## Debug

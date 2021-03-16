@@ -1,0 +1,15 @@
+{
+  "name": "cisco-nexus9300v",
+  "description": "This box contains the Cisco Nexus 9300v Switch.",
+  "versions": [
+    {
+      "version": "VER",
+      "providers": [
+        {
+          "name": "libvirt",
+          "url": "file://HOME/boxes/cisco-nexus9300v-VER.box"
+        }
+      ]
+    }
+  ]
+}
