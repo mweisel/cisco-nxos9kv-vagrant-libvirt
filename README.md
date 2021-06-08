@@ -215,6 +215,7 @@ $ <b>vim files/create_box.sh</b>
 
 > 7.0(3)I7(9)
 
+<pre>
 $ <b>vim files/boot_image.exp</b>
 </pre>
 
