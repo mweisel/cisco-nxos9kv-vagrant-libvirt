@@ -1,0 +1,50 @@
+set timeout 360
+set prompt "(>|#) $"
+set nxos "9.3.7"
+set is_64bit 0
+log_file -noappend "~/nxosv-console.explog"
+
+spawn telnet 127.0.0.1 52099
+
+# skip power on auto provisioning (poap)
+expect "Abort Power On Auto Provisioning"
+send "skip\r"
+
+# allow adequate time for system to become ready
+sleep 90
+send "\r"
+
+# log in with the admin user
+expect "login:"
+send "admin\r"
+expect "Password:"
+send "\r"
+
+# configure the boot image and reload
+expect -re $prompt {
+	send "configure\r"
+	send "username admin password Cisco1984!\r"
+}
+send "no feature signature-verification\r"
+expect "Are you sure you want to continue"
+send "y\r"
+expect -re $prompt {
+    if $is_64bit {
+        send "boot nxos bootflash:nxos64.$nxos.bin\r" 
+    } else {
+        send "boot nxos bootflash:nxos.$nxos.bin\r"
+    }
+	send "end\r"
+}
+
+# save the running configuration to local nvram
+send "copy running-config startup-config\r"
+expect -re $prompt
+
+# allow adequate time for configuration save to complete
+sleep 30
+send "\r"
+expect -re $prompt
+
+# log out
+send "exit\r"

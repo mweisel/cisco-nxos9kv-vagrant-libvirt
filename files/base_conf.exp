@@ -1,46 +1,8 @@
 set timeout 360
 set prompt "(>|#) $"
-set nxos "7.0.3.I7.9"
 log_file -noappend "~/nxosv-console.explog"
 
 spawn telnet 127.0.0.1 52099
-
-# skip power on auto provisioning (poap)
-expect "Abort Power On Auto Provisioning"
-send "skip\r"
-
-# wait for system to become ready 
-expect "System ready"
-send "\r"
-
-# log in with the admin user
-expect "login:"
-send "admin\r"
-expect "Password:"
-send "\r"
-
-# configure the boot image and reload
-expect -re $prompt {
-	send "configure\r"
-	send "username admin password Cisco1984!\r"
-}
-send "no feature signature-verification\r"
-expect "Are you sure you want to continue"
-send "y\r"
-expect -re $prompt {
-	send "boot nxos bootflash:nxos.$nxos.bin\r"
-	send "end\r"
-}
-
-# save the running configuration to local nvram
-send "copy running-config startup-config\r"
-expect -re $prompt
-
-# pause and reload
-sleep 30
-send "reload\r"
-expect "This command will reboot the system"
-send "y\r"
 
 # wait for system to become ready 
 expect "System ready"
@@ -82,10 +44,15 @@ expect -re $prompt {
 }
 
 # save the running configuration to local nvram
-send "copy running-config startup-config\r"
-expect -re $prompt
+expect -re $prompt {
+	send "copy running-config startup-config\r"
+	send "\r"
+}
 
-# allow time for save to complete
+# allow adequate time for configuration save to complete
 sleep 30
 send "\r"
 expect -re $prompt
+
+# log out
+send "exit\r"

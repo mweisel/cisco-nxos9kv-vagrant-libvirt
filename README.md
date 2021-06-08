@@ -13,8 +13,10 @@ A procedure for creating a Cisco Nexus 9000v Vagrant box for the [libvirt](https
   * [QEMU](https://www.qemu.org)
   * [Expect](https://en.wikipedia.org/wiki/Expect)
   * [Telnet](https://en.wikipedia.org/wiki/Telnet)
-  * [Vagrant](https://www.vagrantup.com) <= 2.2.9
+  * [Vagrant](https://www.vagrantup.com) >= 2.2.10
   * [vagrant-libvirt](https://github.com/vagrant-libvirt/vagrant-libvirt)
+
+> Vagrant version **2.2.16** introduced a bug that *breaks* SSH connectivity - [#12344](https://github.com/hashicorp/vagrant/issues/12344)
 
 ## Steps
 
@@ -23,7 +25,7 @@ A procedure for creating a Cisco Nexus 9000v Vagrant box for the [libvirt](https
 <pre>
 $ <b>which git python ansible libvirtd virsh qemu-system-x86_64 expect telnet vagrant</b>
 $ <b>vagrant plugin list</b>
-vagrant-libvirt (0.3.0, global)
+vagrant-libvirt (0.5.1, global)
 </pre>
 
 1\. Install the `ovmf` package.
@@ -42,10 +44,24 @@ $ <b>sudo pacman -S edk2-ovmf</b>
 
 2\. Log in and download the Cisco Nexus 9000/3000 Virtual Switch for KVM disk image file from your [Cisco](https://www.cisco.com/c/en/us/support/switches/nexus-9000v-switch/model.html#~tab-downloads) account. Save the file to your `Downloads` directory.
 
-3\. Copy (and rename) the disk image file to the `/var/lib/libvirt/images` directory.
+3\. Copy (and rename) the disk image file to the `/var/lib/libvirt/images` directory. Use one of the following examples corresponding to the file version you downloaded:
+
+> 7.0(3)I7(9)
 
 <pre>
-$ <b>sudo cp $HOME/Downloads/nexus9300v.10.1.1.qcow2 /var/lib/libvirt/images/cisco-nxosv.qcow2</b>
+$ <b>sudo cp $HOME/Downloads/nxosv-final.7.0.3.I7.9.qcow2 /var/lib/libvirt/images/cisco-nxosv.qcow2</b>
+</pre>
+
+> 9300v 9.3(7)
+
+<pre>
+$ <b>sudo cp $HOME/Downloads/nexus9300v.9.3.7.qcow2 /var/lib/libvirt/images/cisco-nxosv.qcow2</b>
+</pre>
+
+> 9500v64 10.1(2)
+
+<pre>
+$ <b>sudo cp $HOME/Downloads/nexus9500v64.10.1.2.qcow2 /var/lib/libvirt/images/cisco-nxosv.qcow2</b>
 </pre>
 
 4\. Modify the file ownership and permissions. Note the owner may differ between Linux distributions.
@@ -109,7 +125,7 @@ $ <b>vim templates/cisco-nxosv.xml</b>
 <pre>
 &lt;domain type='kvm'&gt;
   &lt;name&gt;cisco-nxosv&lt;/name&gt;
-  &lt;memory unit='KiB'&gt;8388608&lt;/memory&gt;
+  &lt;memory unit='KiB'&gt;10485760&lt;/memory&gt;
   &lt;vcpu placement='static'&gt;2&lt;/vcpu&gt;
   &lt;os&gt;
     &lt;type arch='x86_64'&gt;hvm&lt;/type&gt;
@@ -130,13 +146,13 @@ $ <b>vim files/create_box.sh</b>
   config.vm.provider :libvirt do |domain|
     domain.cpus = 2
     domain.features = ['acpi']
-    domain.loader = "<b>/usr/share/OVMF/OVMF_CODE.fd</b>"
+    domain.loader = '<b>/usr/share/OVMF/OVMF_CODE.fd</b>'
     domain.memory = 8192
-    domain.disk_bus = "sata"
-    domain.disk_device = "sda"
-    domain.volume_cache = "unsafe"
-    domain.nic_model_type = "e1000"
-    domain.graphics_type = "none"
+    domain.disk_bus = 'sata'
+    domain.disk_device = 'sda'
+    domain.disk_driver :cache => 'none'
+    domain.nic_model_type = 'e1000'
+    domain.graphics_type = 'none'
   end
 ...
 </pre>
@@ -152,7 +168,7 @@ $ <b>vim templates/cisco-nxosv.xml</b>
 <pre>
 &lt;domain type='kvm'&gt;
   &lt;name&gt;cisco-nxosv&lt;/name&gt;
-  &lt;memory unit='KiB'&gt;8388608&lt;/memory&gt;
+  &lt;memory unit='KiB'&gt;10485760&lt;/memory&gt;
   &lt;vcpu placement='static'&gt;2&lt;/vcpu&gt;
   &lt;os&gt;
     &lt;type arch='x86_64'&gt;hvm&lt;/type&gt;
@@ -173,56 +189,40 @@ $ <b>vim files/create_box.sh</b>
   config.vm.provider :libvirt do |domain|
     domain.cpus = 2
     domain.features = ['acpi']
-    domain.loader = "<b>/usr/share/edk2-ovmf/x64/OVMF_CODE.fd</b>"
+    domain.loader = '<b>/usr/share/edk2-ovmf/x64/OVMF_CODE.fd</b>'
     domain.memory = 8192
-    domain.disk_bus = "sata"
-    domain.disk_device = "sda"
-    domain.volume_cache = "unsafe"
-    domain.nic_model_type = "e1000"
-    domain.graphics_type = "none"
+    domain.disk_bus = 'sata'
+    domain.disk_device = 'sda'
+    domain.disk_driver :cache => 'none'
+    domain.nic_model_type = 'e1000'
+    domain.graphics_type = 'none'
   end
 ...
 </pre>
 
-10\. Modify the `expect_script` and `nxos` variable values.
+10\. Modify/Verify the `nxos` and `is_64bit` variable values in the `boot_image.exp` script file. Use the following table and examples for guidance:
 
-Use the following as a guideline for different versions:
-
-| Disk image | Boot image | Expect script |
+| Disk image | nxos | is_64bit |
 | :--- | :--- | :--- |
-| nxosv-final.7.0.3.I7.9.qcow2 | 7.0.3.I7.9 | cisco_nxos_base_conf.exp |
-| nxosv.9.2.4.qcow2 | 9.2.4 | cisco_nxos_base_conf.exp |
-| nexus9500v.9.3.7.qcow2 | 9.3.7 | cisco_nexus9x00v_base_conf.exp |
-| nexus9300v.10.1.1.qcow2 | 10.1.1 | cisco_nexus9x00v_base_conf.exp |
-| nexus9500v64.10.1.1.qcow2 | 10.1.1 | cisco_nxos64_9500v_base_conf.exp |
+| nxosv-final.7.0.3.I7.9.qcow2 | 7.0.3.I7.9 | 0 |
+| nxosv.9.2.4.qcow2 | 9.2.4 | 0 |
+| nexus9300v.9.3.7.qcow2 | 9.3.7 | 0 |
+| nexus9500v.9.3.7.qcow2 | 9.3.7 | 0 |
+| nexus9300v.10.1.2.qcow2 | 10.1.2 | 0 |
+| nexus9500v<b>64</b>.10.1.2.qcow2 | 10.1.2 | 1 |
 
 <br />
 
-> nxosv-final.7.0.3.I7.9.qcow2
+> 7.0(3)I7(9)
 
-<pre>
-$ <b>vim main.yml</b>
-</pre>
-
-<pre>
-...
-
-  vars:
-    - disk_image_name: cisco-nxosv.qcow2
-    - domain_name: cisco-nxosv
-    - expect_script: <b>cisco_nxos_base_conf.exp</b>
-
-...
-</pre>
-
-<pre>
-$ <b>vim files/cisco_nxos_base_conf.exp</b>
+$ <b>vim files/boot_image.exp</b>
 </pre>
 
 <pre>
 set timeout 360
 set prompt "(>|#) $"
 set nxos "<b>7.0.3.I7.9</b>"
+set is_64bit <b>0</b>
 log_file -noappend "~/nxosv-console.explog"
 
 ...
@@ -230,31 +230,35 @@ log_file -noappend "~/nxosv-console.explog"
 
 <br />
 
-> nexus9300v.10.1.1.qcow2
+> 9300v 9.3(7)
 
 <pre>
-$ <b>vim main.yml</b>
-</pre>
-
-<pre>
-...
-
-  vars:
-    - disk_image_name: cisco-nxosv.qcow2
-    - domain_name: cisco-nxosv
-    - expect_script: <b>cisco_nexus9x00v_base_conf.exp</b>
-
-...
-</pre>
-
-<pre>
-$ <b>vim files/cisco_nexus9x00v_base_conf.exp</b>
+$ <b>vim files/boot_image.exp</b>
 </pre>
 
 <pre>
 set timeout 360
 set prompt "(>|#) $"
-set nxos "<b>10.1.1</b>"
+set nxos "<b>9.3.7</b>"
+set is_64bit <b>0</b>
+log_file -noappend "~/nxosv-console.explog"
+
+...
+</pre>
+
+<br />
+
+> 9500v64 10.1(2)
+
+<pre>
+$ <b>vim files/boot_image.exp</b>
+</pre>
+
+<pre>
+set timeout 360
+set prompt "(>|#) $"
+set nxos "<b>10.1.2</b>"
+set is_64bit <b>1</b>
 log_file -noappend "~/nxosv-console.explog"
 
 ...
@@ -268,14 +272,42 @@ $ <b>ansible-playbook main.yml</b>
 
 12\. Copy (and rename) the Vagrant box artifact to the `boxes` directory.
 
+> 7.0(3)I7(9)
+
 <pre>
-$ <b>cp cisco-nxosv.box $HOME/boxes/cisco-nexus9300v-10.1.1.box</b>
+$ <b>cp cisco-nxosv.box $HOME/boxes/cisco-nexus9000v-7.0.3.I7.9.box</b>
+</pre>
+
+> 9300v 9.3(7)
+
+<pre>
+$ <b>cp cisco-nxosv.box $HOME/boxes/cisco-nexus9300v-9.3.7.box</b>
+</pre>
+
+> 9500v64 10.1(2)
+
+<pre>
+$ <b>cp cisco-nxosv.box $HOME/boxes/cisco-nexus9500v-10.1.2.box</b>
 </pre>
 
 13\. Copy the box metadata file to the `boxes` directory.
 
+> 7.0(3)I7(9)
+
+<pre>
+$ <b>cp ./files/cisco-nexus9000v.json $HOME/boxes/</b>
+</pre>
+
+> 9300v 9.3(7)
+
 <pre>
 $ <b>cp ./files/cisco-nexus9300v.json $HOME/boxes/</b>
+</pre>
+
+> 9500v64 10.1(2)
+
+<pre>
+$ <b>cp ./files/cisco-nexus9500v.json $HOME/boxes/</b>
 </pre>
 
 14\. Change the current working directory to `boxes`.
@@ -285,6 +317,20 @@ $ <b>cd $HOME/boxes</b>
 </pre>
 
 15\. Substitute the `HOME` placeholder string in the box metadata file.
+
+> 7.0(3)I7(9)
+
+<pre>
+$ <b>awk '/url/{gsub(/^ */,"");print}' cisco-nexus9000v.json</b>
+"url": "file://<b>HOME</b>/boxes/cisco-nexus9000v-VER.box"
+
+$ <b>sed -i "s|HOME|${HOME}|" cisco-nexus9000v.json</b>
+
+$ <b>awk '/url/{gsub(/^ */,"");print}' cisco-nexus9000v.json</b>
+"url": "file://<b>/home/marc</b>/boxes/cisco-nexus9000v-VER.box"
+</pre>
+
+> 9300v 9.3(7)
 
 <pre>
 $ <b>awk '/url/{gsub(/^ */,"");print}' cisco-nexus9300v.json</b>
@@ -296,33 +342,80 @@ $ <b>awk '/url/{gsub(/^ */,"");print}' cisco-nexus9300v.json</b>
 "url": "file://<b>/home/marc</b>/boxes/cisco-nexus9300v-VER.box"
 </pre>
 
-16\. Also, substitute the `VER` placeholder string with the Cisco NX-OS version you're using.
+> 9500v64 10.1(2)
+
+<pre>
+$ <b>awk '/url/{gsub(/^ */,"");print}' cisco-nexus9500v.json</b>
+"url": "file://<b>HOME</b>/boxes/cisco-nexus9500v-VER.box"
+
+$ <b>sed -i "s|HOME|${HOME}|" cisco-nexus9500v.json</b>
+
+$ <b>awk '/url/{gsub(/^ */,"");print}' cisco-nexus9500v.json</b>
+"url": "file://<b>/home/marc</b>/boxes/cisco-nexus9500v-VER.box"
+</pre>
+
+16\. Also, substitute the `VER` placeholder string with your Cisco NX-OS version.
+
+> 7.0(3)I7(9)
+
+<pre>
+$ <b>awk '/VER/{gsub(/^ */,"");print}' cisco-nexus9000v.json</b>
+"version": "<b>VER</b>",
+"url": "file:///home/marc/boxes/cisco-nexus9000v-<b>VER</b>.box"
+
+$ <b>sed -i 's/VER/7.0.3.I7.9/g' cisco-nexus9000v.json</b>
+
+$ <b>awk '/\&lt;version\&gt;|url/{gsub(/^ */,"");print}' cisco-nexus9000v.json</b>
+"version": "<b>7.0.3.I7.9</b>",
+"url": "file:///home/marc/boxes/cisco-nexus9000v-<b>7.0.3.I7.9</b>.box"
+</pre>
+
+> 9300v 9.3(7)
 
 <pre>
 $ <b>awk '/VER/{gsub(/^ */,"");print}' cisco-nexus9300v.json</b>
 "version": "<b>VER</b>",
 "url": "file:///home/marc/boxes/cisco-nexus9300v-<b>VER</b>.box"
 
-$ <b>sed -i 's/VER/10.1.1/g' cisco-nexus9300v.json</b>
+$ <b>sed -i 's/VER/9.3.7/g' cisco-nexus9300v.json</b>
 
 $ <b>awk '/\&lt;version\&gt;|url/{gsub(/^ */,"");print}' cisco-nexus9300v.json</b>
-"version": "<b>10.1.1</b>",
-"url": "file:///home/marc/boxes/cisco-nexus9300v-<b>10.1.1</b>.box"
+"version": "<b>9.3.7</b>",
+"url": "file:///home/marc/boxes/cisco-nexus9300v-<b>9.3.7</b>.box"
+</pre>
+
+> 9500v64 10.1(2)
+
+<pre>
+$ <b>awk '/VER/{gsub(/^ */,"");print}' cisco-nexus9500v.json</b>
+"version": "<b>VER</b>",
+"url": "file:///home/marc/boxes/cisco-nexus9500v-<b>VER</b>.box"
+
+$ <b>sed -i 's/VER/10.1.2/g' cisco-nexus9500v.json</b>
+
+$ <b>awk '/\&lt;version\&gt;|url/{gsub(/^ */,"");print}' cisco-nexus9500v.json</b>
+"version": "<b>10.1.2</b>",
+"url": "file:///home/marc/boxes/cisco-nexus9500v-<b>10.1.2</b>.box"
 </pre>
 
 17\. Add the Vagrant box to the local inventory.
 
+> 7.0(3)I7(9)
+
 <pre>
-$ <b>vagrant box add cisco-nexus9300v.json</b>
+$ <b>vagrant box add --box-version 7.0.3.I7.9 cisco-nexus9000v.json</b>
 </pre>
 
-18\. Verify the Vagrant box has been added to the local inventory.
+> 9300v 9.3(7)
 
 <pre>
-$ <b>vagrant box list | grep nexus</b>
-cisco-nexus9000v            (libvirt, 7.0.3.I7.9)
-cisco-nexus9300v            (libvirt, 10.1.1)
-cisco-nexus9500v            (libvirt, 10.1.1)
+$ <b>vagrant box add --box-version 9.3.7 cisco-nexus9300v.json</b>
+</pre>
+
+> 9500v64 10.1(2)
+
+<pre>
+$ <b>vagrant box add --box-version 10.1.2 cisco-nexus9500v.json</b>
 </pre>
 
 ## Debug

@@ -5,7 +5,8 @@
   vars:
     - disk_image_name: cisco-nxosv.qcow2
     - domain_name: cisco-nxosv
-    - expect_script: cisco_nexus9x00v_base_conf.exp
+    - boot_script: boot_image.exp
+    - conf_script: base_conf.exp
 
   tasks:
     - name: "verify the {{ disk_image_name }} file is available"
@@ -30,12 +31,27 @@
       register: start_result
       failed_when: start_result.rc != 0
 
-    - name: set the cisco nxos base configuration
-      script: "{{ expect_script }}"
+    - name: set the nxos boot image
+      script: "{{ boot_script }}"
       args:
         executable: expect
 
-    - name: stop (destroy) the domain
+    - name: stop the domain
+      command: virsh -c qemu:///system destroy {{ domain_name }}
+      register: destroy_result
+      failed_when: destroy_result.rc != 0
+
+    - name: restart the domain
+      command: virsh -c qemu:///system start {{ domain_name }}
+      register: start_result
+      failed_when: start_result.rc != 0
+
+    - name: set the cisco nxos base configuration
+      script: "{{ conf_script }}"
+      args:
+        executable: expect
+
+    - name: stop the domain
       command: virsh -c qemu:///system destroy {{ domain_name }}
       register: destroy_result
       failed_when: destroy_result.rc != 0
