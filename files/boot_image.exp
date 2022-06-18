@@ -1,7 +1,8 @@
 set timeout 360
 set prompt "(>|#) $"
-set nxos "9.3.7"
-set is_64bit 0
+set nxos "10.2.3.F"
+set is_64bit 1
+set is_lite 1
 log_file -noappend "~/nxosv-console.explog"
 
 spawn telnet 127.0.0.1 52099
@@ -29,8 +30,12 @@ send "no feature signature-verification\r"
 expect "Are you sure you want to continue"
 send "y\r"
 expect -re $prompt {
-    if $is_64bit {
-        send "boot nxos bootflash:nxos64.$nxos.bin\r" 
+    if {$is_64bit} {
+        if {$is_lite} {
+            send "boot nxos bootflash:nxos64-cs-lite.$nxos.bin\r"
+        } else {
+            send "boot nxos bootflash:nxos64.$nxos.bin\r"
+        }
     } else {
         send "boot nxos bootflash:nxos.$nxos.bin\r"
     }

@@ -22,7 +22,7 @@
       failed_when: not vnet_result.stdout is search('vagrant-libvirt')
 
     - name: define the domain
-      command: virsh -c qemu:///system define ./templates/{{ domain_name }}.xml
+      command: virsh -c qemu:///system define ./files/{{ domain_name }}.xml
       register: define_result
       failed_when: define_result.rc != 0
 

@@ -1,0 +1,15 @@
+{
+  "name": "cisco-nexus9500v-lite",
+  "description": "This box contains the Cisco Nexus 9500v (lite) Switch.",
+  "versions": [
+    {
+      "version": "VER",
+      "providers": [
+        {
+          "name": "libvirt",
+          "url": "file://HOME/boxes/cisco-nexus9500v-VER-lite.box"
+        }
+      ]
+    }
+  ]
+}
