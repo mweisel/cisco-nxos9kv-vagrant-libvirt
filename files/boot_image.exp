@@ -1,43 +1,55 @@
 set timeout 360
 set prompt "(>|#) $"
-set nxos "10.2.3.F"
-set is_64bit 1
+set nxos "10.6.2.F"
 set is_lite 1
 log_file -noappend "~/nxosv-console.explog"
 
 spawn telnet 127.0.0.1 52099
 
-# skip power on auto provisioning (poap)
+# abort power on auto provisioning (poap)
 expect "Abort Power On Auto Provisioning"
-send "skip\r"
+send "yes\r"
 
 # allow adequate time for system to become ready
 sleep 90
-send "\r"
+
+# disable secure password standard
+expect "Do you want to enforce secure password standard"
+send "no\r"
+
+# set admin user password
+sleep 3
+expect "Enter the password for"
+send "Cisco1984\r"
+
+# confirm the admin user password
+sleep 3
+expect "Confirm the password for"
+send "Cisco1984\r"
+
+# disable setup mode
+expect "Would you like to enter the basic configuration dialog"
+send "no\r"
 
 # log in with the admin user
 expect "login:"
 send "admin\r"
 expect "Password:"
-send "\r"
+send "Cisco1984\r"
 
 # configure the boot image and reload
 expect -re $prompt {
 	send "configure\r"
-	send "username admin password Cisco1984!\r"
+	send "username admin password Cisco1984\r"
 }
 send "no feature signature-verification\r"
 expect "Are you sure you want to continue"
 send "y\r"
 expect -re $prompt {
-    if {$is_64bit} {
-        if {$is_lite} {
-            send "boot nxos bootflash:nxos64-cs-lite.$nxos.bin\r"
-        } else {
-            send "boot nxos bootflash:nxos64.$nxos.bin\r"
-        }
+    if {$is_lite} {
+        send "boot nxos bootflash:nxos64-cs-lite.$nxos.bin\r"
     } else {
-        send "boot nxos bootflash:nxos.$nxos.bin\r"
+        send "boot nxos bootflash:nxos64-cs.$nxos.bin\r"
     }
 	send "end\r"
 }

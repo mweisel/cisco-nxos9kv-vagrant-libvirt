@@ -4,7 +4,7 @@ log_file -noappend "~/nxosv-console.explog"
 
 spawn telnet 127.0.0.1 52099
 
-# wait for system to become ready 
+# wait for system to become ready
 expect "System ready"
 send "\r"
 
@@ -12,7 +12,7 @@ send "\r"
 expect "login:"
 send "admin\r"
 expect "Password:"
-send "Cisco1984!\r"
+send "Cisco1984\r"
 
 # create the vagrant user
 expect -re $prompt {
@@ -26,9 +26,11 @@ expect -re $prompt {
 expect -re $prompt {
 	send "feature nxapi\r"
 	send "feature scp-server\r"
+	send "feature netconf\r"
+	send "feature openconfig\r"
 }
 
-# disable timeout for the virtual terminal line 
+# disable timeout for the virtual terminal line
 expect -re $prompt {
 	send "line vty\r"
 	send "exec-timeout 0\r"

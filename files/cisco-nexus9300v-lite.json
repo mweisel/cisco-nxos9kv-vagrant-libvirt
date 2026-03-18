@@ -1,5 +1,5 @@
 {
-  "name": "cisco-nexus9300v-lite",
+  "name": "cisco/nexus9300v-lite",
   "description": "This box contains the Cisco Nexus 9300v (lite) Switch.",
   "versions": [
     {
@@ -7,7 +7,9 @@
       "providers": [
         {
           "name": "libvirt",
-          "url": "file://HOME/boxes/cisco-nexus9300v-VER-lite.box"
+          "url": "file://HOME/boxes/cisco-nexus9300v-VER-lite.box",
+          "architecture": "amd64",
+          "default_architecture": true
         }
       ]
     }
